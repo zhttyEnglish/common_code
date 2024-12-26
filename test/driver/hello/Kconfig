@@ -1,0 +1,5 @@
+config HELLO
+tristate "hello driver"
+help
+  just a simplest driver.
+default y
