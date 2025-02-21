@@ -54,8 +54,8 @@ static void tcp_server_task(void *arg)
 		maxfd = listenfd;                                           /* ��� listenfd ��Ϊ����ļ������� */
 
 		maxi = -1;                                                  /* ��������client[]���±�, ��ʼֵָ��0��Ԫ��֮ǰ�±�λ�� */
-		memset(client, -1, 10);                                        /* ��-1��ʼ��client[] */
-
+//		memset(client, -1, 10);                                        /* ��-1��ʼ��client[] */
+// int a[10] can not use memset to init , data of a[] would not be able to know
 		FD_ZERO(&allset);
 		FD_SET(listenfd, &allset);                                  /* ����select����ļ��������� */
 
@@ -73,7 +73,7 @@ static void tcp_server_task(void *arg)
 				serverlog("accept ...\r\n");
 				
 				for (i = 0; i < 10; i++){
-					if (client[i] < 0) {                            /* ��client[]��û��ʹ�õ�λ�� */
+					if (client[i] <= 0) {                            /* ��client[]��û��ʹ�õ�λ�� */
 						client[i] = connfd;                         /* ����accept���ص��ļ���������client[]�� */
 						break;
 					}
