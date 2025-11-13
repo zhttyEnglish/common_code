@@ -29,4 +29,4 @@ echo "共享文件夹路径：/home/$(whoami)/samba"
 echo "共享名称：samba_share"
 echo "登录账户：$(whoami)"
 
-#sudo smbpasswd -a dp
+sudo smbpasswd -a dp
