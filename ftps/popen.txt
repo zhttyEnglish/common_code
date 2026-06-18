@@ -1,0 +1,22 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+int main()
+{
+	FILE * fp;
+	int redo = 0;
+	do{		
+		redo = 0;	
+		fp = popen("./test get image.jpg image.jpg 192.168.3.21 21 ftpuser dp12345678", "r");
+		char log[128] = {0};
+		while(fgets(log, 128, fp) != NULL){
+			printf("%s", log);
+			if(strstr(log, "failed") != NULL){
+				redo = 1;
+			}	
+		}
+	}while(redo);
+
+	pclose(fp);
+	return 0;
+}

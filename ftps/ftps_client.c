@@ -446,39 +446,44 @@ int FtpsOpenPasvSockConn(FtpsClient *cli,FtpsClient *datahandle)
 	int port = 0;
 	char *cp,buff[512],str1[32],str2[32],str3[32];
 	int v[7];
- 
+// 	int times  = 0;
 	
 	/** 被动模式需要另外打开一条数据链路 **/
-	do{
- 
-		bzero(buff,sizeof(buff));
-		bzero(v,sizeof(v));
-		EnSend(cli,PASV_CMD,strlen(PASV_CMD));/** 查询被动端口 **/
+//	do{
+//	times ++;
+	bzero(buff,sizeof(buff));
+	bzero(v,sizeof(v));
+	EnSend(cli,PASV_CMD,strlen(PASV_CMD));/** 查询被动端口 **/
 //		PrintResp(cli);
-		EnRecv(cli,buff,sizeof(buff));
-		printf("PASV port :%s\r\n",buff);
-		cp = strchr(buff,'(');
-		if (cp == NULL) {
-			printf("PASV return may some error\r\n");
-			return -1;
-		}	
-		cp++;
+	EnRecv(cli,buff,sizeof(buff));
+	printf("PASV port :%s\r\n",buff);
+	cp = strchr(buff,'(');
+	if (cp == NULL) {
+		printf("PASV return may some error\r\n");
+		return -1;
+	}	
+	cp++;
+
+	sscanf(buff,"%d %s %s %s (%d,%d,%d,%d,%d,%d).",&v[0],str1,str2,str3,&v[1],&v[2],&v[3],&v[4],&v[5],&v[6]);        
 	
-		sscanf(buff,"%d %s %s %s (%d,%d,%d,%d,%d,%d).",&v[0],str1,str2,str3,&v[1],&v[2],&v[3],&v[4],&v[5],&v[6]);        
-		
-		port=v[5]*256+v[6];
-		printf("server ip %s port=%d\n", cli->ip, port);
-		
-		snprintf(host,sizeof(host),"%s:%d",cli->ip,port);		
-		
-		ret = OpenConnectByHost(datahandle,host);
-		if(ret < 0)
-			printf("Host:%s data sock connect failed,To retry another port...\n",host);
-		else
-			break;	
-		sleep(5);
-	}while(ret < 0);
+	port=v[5]*256+v[6];
+	printf("server ip %s port=%d\n", cli->ip, port);
 	
+	snprintf(host,sizeof(host),"%s:%d",cli->ip,port);		
+	
+	ret = OpenConnectByHost(datahandle,host);
+	if(ret < 0){
+		printf("Host:%s data sock connect failed\n",host);
+		return -1;
+	}
+//	else
+//		break;		
+//		if(times == 3){
+//			printf("reconnect 3 times, failed\r\n");
+//			return -1;
+//		}
+//		sleep(1);
+//	}while(ret < 0);	
 //	TestConnection(datahandle->connfd);
 	
 	return 0;

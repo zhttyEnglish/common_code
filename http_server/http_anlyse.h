@@ -72,8 +72,8 @@ typedef response_content_A_t * response_content_A_handle_t;
 
 struct Area{
 	int count;
-	double  x[8];
-	double  y[8];
+	double  x[4];
+	double  y[4];
 };
 
 #if 0
@@ -166,19 +166,14 @@ response_content_B_t;
 typedef response_content_B_t * response_content_B_handle_t;
 #endif
 typedef struct result_json_t{
-	double x[8];
-	double y[8];
-	double w[8];
-	double h[8];
-	double confidence[8];
 	int cls_id[8];
 	int count;
 	char type[32];
-	int value;
+	char value[32];
 	int code;
-	char res_image_path[128];
+	char res_image_path[256];
 	char desc[32];
-	struct Area area[4];
+	struct Area area[32];
 	double conf;
 }result_json_t;
 

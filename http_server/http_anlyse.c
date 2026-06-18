@@ -14,8 +14,6 @@
 
 request_content_A_t request_content_A;  		//存储A类算法post数据
 
-response_content_A_t response_content_A; 	//存储A类算法结果回调数据
-
 result_json_t	result_json;
 
 /* check_if_post    检查是否为post请求
@@ -37,24 +35,24 @@ int check_if_post(char * data, char * file_name, char * content)
 //		head = data + 5;
 		tail = strstr(data, " HTTP");
 		if(tail == NULL){
-			printf("### tail ERROR\r\n");
+//			printf("### tail ERROR\r\n");
 			return -1;
 		}
-		printf("tail %p\r\n", tail);
+//		printf("tail %p\r\n", tail);
 		strncpy(file_name, data + 5, tail - data - 5);
 		
 		head = strchr(data, '{');
 		tail = strrchr(data, '}');
 		if(head == NULL){
-			printf("### head ERROR\r\n");
+//			printf("### head ERROR\r\n");
 			return -1;
 		}
-		printf("head %p\r\n", tail);
+//		printf("head %p\r\n", tail);
 		if(tail == NULL){
-			printf("### ERROR tail\r\n");
+//			printf("### ERROR tail\r\n");
 			return -1;
 		}
-		printf("tail %p\r\n", tail);
+//		printf("tail %p\r\n", tail);
 		strncpy(content, head, tail - head + 1);
 		type = 0;
 	}
@@ -107,7 +105,7 @@ int parse_post_A_content(char * data)
 		requestHostIp_EndStart = strchr(requestHostIp_ValueStart + 1, '\"');
 		strncpy(request_content_A.request_host_ip, requestHostIp_ValueStart + 1, requestHostIp_EndStart - requestHostIp_ValueStart - 1);
 	}else{
-		printf("@11qqqq  ERROR\r\n ");
+//		printf("@11qqqq  ERROR\r\n ");
 		return -1;
 	}
 	
@@ -205,7 +203,7 @@ int build_A_callback_content(char * buf)
 	pos += sprintf(&buf[pos], "\"objectId\":\"%d\",", request_content_A.object_id);
 	pos += sprintf(&buf[pos], "\"results\":[{");
 	pos += sprintf(&buf[pos], "\"type\":\"%s\",", result_json.type);
-	pos += sprintf(&buf[pos], "\"value\":\"%d\",", result_json.value);
+	pos += sprintf(&buf[pos], "\"value\":\"%s\",", result_json.value);
 	pos += sprintf(&buf[pos], "\"code\":\"%d\",", result_json.code);
 	pos += sprintf(&buf[pos], "\"resImagePath\":\"%s\",", result_json.res_image_path);
 	
@@ -307,28 +305,47 @@ int parse_callback_packet(char * data)
 
 int read_result_json(char * buf)
 {
-	printf("read_result_json start\r\n");
+	if(!access("/result.json", 0))
+	{
+		
+	    // Open for reading result.json
+	    FILE* f = fopen("/result.json", "r");
+	    if (f == NULL) {
+	        printf("Failed to open result.json");
+	        return -1;
+	    }
 
-    // Open for reading result.json
-    FILE* f = fopen("/root/result.json", "r");
-    if (f == NULL) {
-        printf("Failed to open result.json");
-        return -1;
-    }
+	    memset(buf, 0, 1024);
+	    int ret = fread(buf, 1, 1024, f);
+		printf("read /result.json : \r\n%s\r\n", buf);
+	    fclose(f);
+	}
+	else if(!access("/root/result.json", 0))
+	{
+		// Open for reading result.json
+	    FILE* f = fopen("/root/result.json", "r");
+	    if (f == NULL) {
+	        printf("Failed to open result.json");
+	        return -1;
+	    }
 
-    memset(buf, 0, 1024);
-    int ret = fread(buf, 1, 1024, f);
-    fclose(f);
-
+	    memset(buf, 0, 1024);
+	    int ret = fread(buf, 1, 1024, f);
+		printf("read /root/result.json : \r\n%s\r\n", buf);
+	    fclose(f);
+	}else{
+		printf("/result.json && /root/result.json not exist\r\n");
+		return -1;
+	}
     // Display the read contents from the file
-    printf("Read from result.json: %s\r\n", buf);
+//    printf("Read from result.json: %s\r\n", buf);
 
-	return ret;
+	return 0;
 }
 
 int parse_result_json(char * data)
 {
-	printf("enter parse_result_json @@@@@\r\n");
+//	printf("enter parse_result_json @@@@@\r\n");
 	char * element_Start = NULL;
 	char * element_ValueStart = NULL;
 	char * element_EndStart = NULL;
@@ -348,12 +365,14 @@ int parse_result_json(char * data)
 		strncpy(result_json.type, element_ValueStart + 1, element_EndStart - element_ValueStart - 1);
 	}
 
-	element_Start = strstr(data, "\"resImagePath\":");
-	if(element_Start != NULL){
-		element_ValueStart = strchr(element_Start + strlen("\"resImagePath\":"), '\"');
-		element_EndStart = strchr(element_ValueStart + 1, '\"');
-		strncpy(result_json.res_image_path, element_ValueStart + 1, element_EndStart - element_ValueStart - 1);
-	}
+//	element_Start = strstr(data, "\"resImagePath\":");
+//	if(element_Start != NULL){
+//		element_ValueStart = strchr(element_Start + strlen("\"resImagePath\":"), '\"');
+//		element_EndStart = strchr(element_ValueStart + 1, '\"');
+//		strncpy(result_json.res_image_path, element_ValueStart + 1, element_EndStart - element_ValueStart - 1);
+//	}
+
+	sprintf(result_json.res_image_path, "/root/image/%s.rgb", request_content_A.image_path_list);
 
 	element_Start = strstr(data, "\"desc\":");
 	if(element_Start != NULL){
@@ -362,10 +381,11 @@ int parse_result_json(char * data)
 		strncpy(result_json.desc, element_ValueStart + 1, element_EndStart - element_ValueStart - 1);
 	}
 	
-	element_Start = strstr(data, "\"value\"");
+	element_Start = strstr(data, "\"value\":");
 	if(element_Start != NULL){
-		element_ValueStart = strstr(element_Start + strlen("\"value\""), ":	");
-		sscanf(element_ValueStart + strlen(":	"), "%d", &result_json.value);
+		element_ValueStart = strchr(element_Start + strlen("\"value\":"), '"');
+		element_EndStart = strchr(element_ValueStart + 1, '"');
+		strncpy(result_json.value, element_ValueStart + 1, element_EndStart - element_ValueStart - 1);
 	}
 	
 	element_Start = strstr(data, "\"code\"");
@@ -418,7 +438,7 @@ int parse_result_json(char * data)
 	}
 #if 1
 	printf("=============================================================\r\n");
-	printf("type %s  value %d code %d conf %f\r\n", result_json.type,result_json.value, result_json.code, result_json.conf);
+	printf("type %s  value %s code %d conf %f\r\n", result_json.type, result_json.value, result_json.code, result_json.conf);
 	printf("resImagePath %s  desc %s \r\n", result_json.res_image_path,result_json.desc);
 	for(int i = 0; i < result_json.count; i ++){
 		printf("area : \r\n");
@@ -504,6 +524,27 @@ int tcp_connect(char * request_ip, int request_post)
 	return sockfd;
 }
 
+int popen_exe(char * buf)
+{
+	FILE * fp;
+	int redo = 0;
+	do{		
+		redo = 0;	
+		fp = popen(buf, "r");
+		char log[128] = {0};
+		while(fgets(log, 128, fp) != NULL){
+			if(strstr(log, "failed") != NULL){
+				redo = 1;
+			}	
+		}
+	}while(redo);
+	pclose(fp);
+	return 0;
+}
+
+char * model_path = "/root/demo/data/npu_model/detection/yolov8_onnx.npubin";
+char * username = "ftpUser";
+char * password = "Password@1";
 int main()
 {
 	char buf[1024] = {0};
@@ -596,7 +637,7 @@ int main()
 				{
 					memset(buf, 0, 1024);
 					ret = recv(tmpfd, buf, 1024, 0);
-					printf("ret = %d\r\n", ret);
+//					printf("ret = %d\r\n", ret);
 					if(ret < 0){
 						printf("receive error\r\n");
 						return -1;
@@ -653,54 +694,94 @@ int main()
 						
 /*===========================================================================================*/
 						// 获取图片
-//						int sendfd = tcp_connect(request_content_A.request_host_ip, request_content_A.request_host_port);
-						char * image_path = "/root/demo/data/npu_image/rgb/test.jpg.rgb";
-						char * model_path = "/root/demo/data/npu_model/detection/yolov8_onnx.npubin";
 						memset(buf, 0, 1024);
-//						sprintf(buf, "%s.rgb", request_content_A.image_path_list);
-//						ret = rename(request_content_A.image_path_list, buf);
-//						if(ret < 0){
-//							printf("rename error\r\n");
-//						}
-//						memset(buf, 0, 1024);
+#if 1
+						sprintf(buf, "/root/ftps_client get /root/image/%s %s %s %d %s %s", request_content_A.image_path_list, request_content_A.image_path_list, 
+							request_content_A.request_host_ip, 30021, username, password);
+						//sprintf(buf, "/root/ftps_client get %s %s %s %d %s %s", "/root/image.jpg", "image.jpg", "192.168.1.21", 21, username, password);
+						printf("buf %s\r\n", buf);
+						popen_exe(buf);
+
+						memset(buf, 0, 1024);
+
+						#if 1
+						sprintf(buf, "/root/jpg2rgb /root/image/%s /root/image/%s.rgb", request_content_A.image_path_list, request_content_A.image_path_list);
+						system(buf);
+						memset(buf, 0, 1024);
+						#else
+						sprintf(buf, "/root/image/%s.rgb", request_content_A.image_path_list);
+						char oldname[256]={0};
+						sprintf(oldname, "/root/image/%s", request_content_A.image_path_list);
+						ret = rename(oldname, buf);
+						if(ret < 0){
+							printf("rename error\r\n");
+						}
+						memset(buf, 0, 1024);
+						#endif
 						
+						//删除上一次的结果
+						if(access("/result.json", F_OK)== 0){
+							ret = remove("/result.json");
+							if(ret < 0){
+								printf("remove error\r\n");
+							}
+						}
+						if(access("/root/result.json", F_OK)== 0){
+							ret = remove("/root/result.json");
+							if(ret < 0){
+								printf("remove error\r\n");
+							}
+						}
 						//todo 调用 算法demo
-						sprintf(buf, "/root/demo/lenovo_alg ./image/%s.rgb %s %s", request_content_A.image_path_list, model_path, request_content_A.type_list);
-//						sprintf(buf, "/root/demo/lenovo_alg %s %s %s", image_path, model_path, "aqmzc");
+						sprintf(buf, "/root/demo/lenovo_alg /root/image/%s.rgb %s %s", request_content_A.image_path_list, model_path, request_content_A.type_list);
+#else
+						sprintf(buf, "/root/demo/lenovo_alg %s %s %s", "/root/test.rgb", model_path, "wcaqm");
+#endif
 						system(buf);
 						
 						//todo 读取result.json 文件 解析返回数据
+						char * json_buf = (char *)malloc(sizeof(char) * 10240);
+						memset(json_buf, 0, 10240);
+						read_result_json(json_buf);
+						parse_result_json(json_buf);
+						free(json_buf);
+//						printf("request_id %s object_id %d\r\n", request_content_A.request_id, request_content_A.object_id);
+//						sprintf(result_json.res_image_path, "%s.rgb", request_content_A.image_path_list);
+
+						// 上传图片
+#if 1
 						memset(buf, 0, 1024);
-						read_result_json(buf);
-						parse_result_json(buf);
-						printf("request_id %s object_id %d\r\n", request_content_A.request_id, request_content_A.object_id);
-						response_content_A.object_id = request_content_A.object_id;
-						memcpy(response_content_A.request_id, request_content_A.request_id, strlen(request_content_A.request_id));
-						memcpy(result_json.res_image_path, image_path, strlen(image_path));
+						sprintf(buf, "/root/ftps_client put %s.rgb /root/image/%s.rgb %s %d %s %s", request_content_A.image_path_list, request_content_A.image_path_list,
+							request_content_A.request_host_ip, 30021, username, password);
+						popen_exe(buf);
+						memset(buf, 0, 1024);
 
 						//回复
 						content_len = build_A_callback_content(content);
 						
 						memset(buf, 0, 1024);
 						packet_len = build_callback_packet(buf, content, content_len, "/platform/api/v1/task/results/pic-result-notify");
+						#if 1
 						int sendfd = tcp_connect(request_content_A.request_host_ip, request_content_A.request_host_port);
 						ret = send(sendfd, buf, packet_len, 0);
 						//ret = send(sendfd, content, content_len, 0);
 						if(ret < 0){
 							printf("build_callback_packet  send error\r\n");
+							close(sendfd);
 							break;
 						}
 						printf("send %s\r\n", buf);
 						memset(buf, 0, 1024);
 						ret = recv(sendfd, buf, 1024, 0);
 						printf("recv %s\r\n", buf);
-						close(sendfd);
 						
+						close(sendfd);
+						#endif
+#endif
 						memset(content, 0, 512);
 						memset(buf, 0, 1024);
 						memset(&result_json, 0, sizeof(struct result_json_t));
 						memset(&request_content_A, 0, sizeof(struct request_content_A_t));
-						memset(&response_content_A, 0, sizeof(struct response_content_A_t));
 					}
 					
 					if (--nready == 0) break; 
